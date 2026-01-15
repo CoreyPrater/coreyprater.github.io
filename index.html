@@ -83,7 +83,13 @@
       return;
     }
 
-    const { error } = await supabase.auth.signInWithOtp({ email });
+ const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: "https://coreyprater.github.io/perfectChance/"
+    }
+  });
+
     if (error) {
       alert("Error sending magic link: " + error.message);
     } else {
