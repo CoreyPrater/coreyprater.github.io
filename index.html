@@ -2,17 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Supabase iOS PWA</title>
+  <title>Supabase Magic Link PWA</title>
 
-  <!-- iOS + PWA -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-  <!-- Manifest -->
   <link rel="manifest" href="manifest.json">
 
-  <!-- Minimal styling -->
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont;
@@ -32,12 +29,12 @@
 </head>
 <body>
 
-<h1>Supabase PWA | Version tracker = 1 </h1>
+<h1>Supabase Magic Link PWA</h1>
 
 <div id="auth">
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="signIn()">Sign In / Sign Up</button>
+  <input id="email" placeholder="Enter your email">
+  <button onclick="sendMagicLink()">Send Magic Link</button>
+  <p>Check your email to log in!</p>
 </div>
 
 <div id="app" class="hidden">
@@ -55,10 +52,9 @@
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   // 🔴 REPLACE THESE
-    const SUPABASE_URL = "https://fhtzawegbejlfyqkipnp.supabase.co";
+  const SUPABASE_URL = "https://fhtzawegbejlfyqkipnp.supabase.co";
   
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZodHphd2VnYmVqbGZ5cWtpcG5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0Mzk4MDMsImV4cCI6MjA4NDAxNTgwM30.13S_lHY3ftr98r3lPvAGLKOrfyVI2hTFfywLTjwUmug";
-
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -67,7 +63,7 @@
   const entriesDiv = document.getElementById("entries");
 
   // -----------------------------
-  // Global functions for buttons
+  // Global functions
   // -----------------------------
   window.updateUI = function(session) {
     if (session && session.user) {
@@ -80,30 +76,19 @@
     }
   }
 
-  window.signIn = async function() {
+  window.sendMagicLink = async function() {
     const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-
-    if (!email || !password) {
-      alert("Email and password required");
+    if (!email) {
+      alert("Enter your email");
       return;
     }
 
-    let { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
+    const { error } = await supabase.auth.signInWithOtp({ email });
     if (error) {
-      // Try to create the user if it doesn't exist
-      const signup = await supabase.auth.signUp({ email, password });
-      if (signup.error) {
-        alert("Signup error: " + signup.error.message);
-        console.error(signup.error);
-        return;
-      }
-      data = signup;
+      alert("Error sending magic link: " + error.message);
+    } else {
+      alert("Magic link sent! Check your email to log in.");
     }
-
-    // Update UI immediately with the session
-    updateUI(data.session || null);
   }
 
   window.signOut = async function() {
