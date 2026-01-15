@@ -4,15 +4,18 @@
   <meta charset="UTF-8">
   <title>Supabase iOS PWA</title>
 
+  <!-- iOS + PWA -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
+  <!-- Manifest -->
   <link rel="manifest" href="manifest.json">
 
+  <!-- Minimal styling -->
   <style>
     body {
-      font-family: system-ui, -apple-system;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont;
       background: #111;
       color: #fff;
       padding: 20px;
@@ -23,13 +26,8 @@
       width: 100%;
       font-size: 16px;
     }
-    .hidden {
-      display: none;
-    }
-    .entry {
-      border-bottom: 1px solid #333;
-      padding: 8px 0;
-    }
+    .hidden { display: none; }
+    .entry { border-bottom: 1px solid #333; padding: 8px 0; }
   </style>
 </head>
 <body>
@@ -58,12 +56,8 @@
 
   // 🔴 REPLACE THESE
   const SUPABASE_URL = "https://fhtzawegbejlfyqkipnp.supabase.co";
+  
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZodHphd2VnYmVqbGZ5cWtpcG5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0Mzk4MDMsImV4cCI6MjA4NDAxNTgwM30.13S_lHY3ftr98r3lPvAGLKOrfyVI2hTFfywLTjwUmug";
-
-
-
-
-
 
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -72,53 +66,73 @@
   const appDiv = document.getElementById("app");
   const entriesDiv = document.getElementById("entries");
 
-  async function checkUser() {
-    const { data } = await supabase.auth.getUser();
-    if (data.user) {
+  // -----------------------------
+  // Global functions for Option 1
+  // -----------------------------
+
+  window.updateUI = async function() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
       authDiv.classList.add("hidden");
       appDiv.classList.remove("hidden");
       loadEntries();
+    } else {
+      authDiv.classList.remove("hidden");
+      appDiv.classList.add("hidden");
     }
   }
 
-  async function signIn() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+  window.signIn = async function() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    if (!email || !password) {
+      alert("Email and password required");
+      return;
+    }
+
+    let { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      // Auto sign-up fallback
-      await supabase.auth.signUp({ email, password });
+      // Try to create the user if it doesn't exist
+      const signup = await supabase.auth.signUp({ email, password });
+      if (signup.error) {
+        alert("Signup error: " + signup.error.message);
+        console.error(signup.error);
+        return;
+      }
+      console.log("User created:", signup.data.user);
     }
 
-    checkUser();
+    await updateUI();
   }
 
-  async function signOut() {
+  window.signOut = async function() {
     await supabase.auth.signOut();
-    location.reload();
+    await updateUI();
   }
 
-  async function addEntry() {
-    const content = document.getElementById("content").value;
+  window.addEntry = async function() {
+    const content = document.getElementById("content").value.trim();
+    if (!content) return;
 
-    await supabase.from("entries").insert({
-      content
-    });
+    const { error } = await supabase.from("entries").insert({ content });
+    if (error) alert("Insert error: " + error.message);
 
     document.getElementById("content").value = "";
     loadEntries();
   }
 
   async function loadEntries() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("entries")
       .select("*")
       .order("created_at", { ascending: false });
+
+    if (error) {
+      alert("Load error: " + error.message);
+      return;
+    }
 
     entriesDiv.innerHTML = "";
     data.forEach(e => {
@@ -129,12 +143,18 @@
     });
   }
 
+  // -----------------------------
+  // Service worker registration
+  // -----------------------------
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js");
   }
 
-  checkUser();
-</script>
+  // -----------------------------
+  // Initial check for logged-in user
+  // -----------------------------
+  updateUI();
 
+</script>
 </body>
 </html>
