@@ -2,35 +2,139 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>Supabase iOS PWA</title>
 
-  <title>My PWA</title>
-
-  <!-- iOS + PWA -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-  <!-- Manifest -->
   <link rel="manifest" href="manifest.json">
 
-  <!-- Basic styling so you see *something* -->
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont;
-      margin: 0;
-      padding: 20px;
+      font-family: system-ui, -apple-system;
       background: #111;
       color: #fff;
+      padding: 20px;
     }
-    button {
-      padding: 12px 16px;
+    input, button {
+      padding: 10px;
+      margin: 6px 0;
+      width: 100%;
       font-size: 16px;
+    }
+    .hidden {
+      display: none;
+    }
+    .entry {
+      border-bottom: 1px solid #333;
+      padding: 8px 0;
     }
   </style>
 </head>
 <body>
 
-  <h1>My iOS PWA</h1>
-  <p>If this launches without Safari chrome, it worked.</p>
+<h1>Supabase PWA</h1>
 
-  <butt
+<div id="auth">
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="signIn()">Sign In / Sign Up</button>
+</div>
+
+<div id="app" class="hidden">
+  <button onclick="signOut()">Sign Out</button>
+
+  <h3>Add Entry</h3>
+  <input id="content" placeholder="Write something">
+  <button onclick="addEntry()">Save</button>
+
+  <h3>Your Entries</h3>
+  <div id="entries"></div>
+</div>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  // 🔴 REPLACE THESE
+  const SUPABASE_URL = "https://fhtzawegbejlfyqkipnp.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_rm0qe8iX0hRvvS4gAQlPHA_pgsvb1KT";
+
+
+
+
+
+
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const authDiv = document.getElementById("auth");
+  const appDiv = document.getElementById("app");
+  const entriesDiv = document.getElementById("entries");
+
+  async function checkUser() {
+    const { data } = await supabase.auth.getUser();
+    if (data.user) {
+      authDiv.classList.add("hidden");
+      appDiv.classList.remove("hidden");
+      loadEntries();
+    }
+  }
+
+  async function signIn() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      // Auto sign-up fallback
+      await supabase.auth.signUp({ email, password });
+    }
+
+    checkUser();
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    location.reload();
+  }
+
+  async function addEntry() {
+    const content = document.getElementById("content").value;
+
+    await supabase.from("entries").insert({
+      content
+    });
+
+    document.getElementById("content").value = "";
+    loadEntries();
+  }
+
+  async function loadEntries() {
+    const { data } = await supabase
+      .from("entries")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    entriesDiv.innerHTML = "";
+    data.forEach(e => {
+      const div = document.createElement("div");
+      div.className = "entry";
+      div.textContent = e.content;
+      entriesDiv.appendChild(div);
+    });
+  }
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
+  }
+
+  checkUser();
+</script>
+
+</body>
+</html>
