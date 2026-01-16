@@ -1,0 +1,20 @@
+body {
+  font-family: sans-serif;
+  margin: 20px;
+  max-width: 600px;
+}
+
+textarea {
+  width: 100%;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
+#results img {
+  border: 1px solid #ccc;
+  display: block;
+}

@@ -2,160 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Supabase Magic Link PWA</title>
-
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-
-  <link rel="manifest" href="manifest.json">
-
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont;
-      background: #111;
-      color: #fff;
-      padding: 20px;
-    }
-    input, button {
-      padding: 10px;
-      margin: 6px 0;
-      width: 100%;
-      font-size: 16px;
-    }
-    .hidden { display: none; }
-    .entry { border-bottom: 1px solid #333; padding: 8px 0; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PerfectChance AI Generator</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <h1>PerfectChance AI Image Generator</h1>
 
-<h1>Supabase Magic Link PWA</h1>
+  <textarea id="prompt" rows="4" cols="50" placeholder="Enter your prompt..."></textarea>
+  <br>
+  <button id="generateBtn">Generate Image</button>
 
-<div id="auth">
-  <input id="email" placeholder="Enter your email">
-  <button onclick="sendMagicLink()">Send Magic Link</button>
-  <p>Check your email to log in!</p>
-</div>
+  <h2>Generated Images:</h2>
+  <div id="results"></div>
 
-<div id="app" class="hidden">
-  <button onclick="signOut()">Sign Out</button>
-
-  <h3>Add Entry</h3>
-  <input id="content" placeholder="Write something">
-  <button onclick="addEntry()">Save</button>
-
-  <h3>Your Entries</h3>
-  <div id="entries"></div>
-</div>
-
-<script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-  // 🔴 REPLACE THESE
-  const SUPABASE_URL = "https://fhtzawegbejlfyqkipnp.supabase.co";
-  
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZodHphd2VnYmVqbGZ5cWtpcG5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0Mzk4MDMsImV4cCI6MjA4NDAxNTgwM30.13S_lHY3ftr98r3lPvAGLKOrfyVI2hTFfywLTjwUmug";
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  const authDiv = document.getElementById("auth");
-  const appDiv = document.getElementById("app");
-  const entriesDiv = document.getElementById("entries");
-
-  // -----------------------------
-  // Global functions
-  // -----------------------------
-  window.updateUI = function(session) {
-    if (session && session.user) {
-      authDiv.classList.add("hidden");
-      appDiv.classList.remove("hidden");
-      loadEntries();
-    } else {
-      authDiv.classList.remove("hidden");
-      appDiv.classList.add("hidden");
-    }
-  }
-
-  window.sendMagicLink = async function() {
-    const email = document.getElementById("email").value.trim();
-    if (!email) {
-      alert("Enter your email");
-      return;
-    }
-
- const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: "https://coreyprater.github.io/perfectChance/"
-    }
-  });
-
-    if (error) {
-      alert("Error sending magic link: " + error.message);
-    } else {
-      alert("Magic link sent! Check your email to log in.");
-    }
-  }
-
-  window.signOut = async function() {
-    await supabase.auth.signOut();
-    updateUI(null);
-  }
-
-  window.addEntry = async function() {
-    const content = document.getElementById("content").value.trim();
-    if (!content) return;
-
-    const { error } = await supabase.from("entries").insert({ content });
-    if (error) alert("Insert error: " + error.message);
-
-    document.getElementById("content").value = "";
-    loadEntries();
-  }
-
-  async function loadEntries() {
-    const { data, error } = await supabase
-      .from("entries")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      alert("Load error: " + error.message);
-      return;
-    }
-
-    entriesDiv.innerHTML = "";
-    data.forEach(e => {
-      const div = document.createElement("div");
-      div.className = "entry";
-      div.textContent = e.content;
-      entriesDiv.appendChild(div);
-    });
-  }
-
-  // -----------------------------
-  // Service worker registration
-  // -----------------------------
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js");
-  }
-
-  // -----------------------------
-  // Listen for auth state changes
-  // -----------------------------
-  supabase.auth.onAuthStateChange((event, session) => {
-    console.log("Auth event:", event, session);
-    updateUI(session);
-  });
-
-  // -----------------------------
-  // Initial check for logged-in user
-  // -----------------------------
-  (async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    updateUI(session);
-  })();
-
-</script>
+  <script src="app.js"></script>
 </body>
 </html>
