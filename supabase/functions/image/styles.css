@@ -1,0 +1,202 @@
+/* ==============================
+   Global
+   ============================== */
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #121212;
+  color: #e0e0e0;
+}
+
+header {
+  padding: 1rem;
+  background: #1f1f1f;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.5rem;
+}
+
+#refTableBtn {
+  background: #3a86ff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#refTableBtn:hover {
+  background: #1f6ae0;
+}
+
+/* Prompt Panel */
+#promptPanel {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 0.5rem;
+}
+
+#prompt {
+  width: 100%;
+  background: #1f1f1f;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 5px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+.prompt-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+#generateBtn {
+  background: #3a86ff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#generateBtn:hover {
+  background: #1f6ae0;
+}
+
+#numImages {
+  width: 4rem;
+  padding: 0.3rem;
+  border-radius: 5px;
+  border: 1px solid #333;
+  background: #1f1f1f;
+  color: #fff;
+}
+
+#status {
+  margin-left: 1rem;
+}
+
+/* Payload sidebar */
+#payloadSidebar {
+  padding: 1rem;
+  background: #1a1a1a;
+  border-top: 1px solid #333;
+}
+
+#payloadSidebar h3 {
+  margin-top: 0;
+}
+
+#payloadList div {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.2rem 0;
+}
+
+#payloadList input {
+  width: 4rem;
+  background: #121212;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.2rem;
+}
+
+/* Results images */
+#results {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 1rem;
+  gap: 1rem;
+  justify-content: flex-start;
+}
+
+.image-box {
+  background: #1f1f1f;
+  border: 1px solid #333;
+  border-radius: 5px;
+  padding: 0.5rem;
+  width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.image-box img {
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+}
+
+.btn-container {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-container button {
+  background: #3a86ff;
+  color: white;
+  border: none;
+  padding: 0.3rem 0.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-container button:hover {
+  background: #1f6ae0;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+  .image-box {
+    width: 100%;
+  }
+  .prompt-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  #numImages {
+    width: 100%;
+  }
+  #generateBtn {
+    width: 100%;
+  }
+}
+
+
+/* Decorative background image */
+.app-bg-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 180px;          /* adjust as needed */
+  height: auto;
+  opacity: 0.12;         /* subtle so it doesn't distract */
+  pointer-events: none; /* critical: prevents interaction blocking */
+  z-index: 0;
+}
+
+/* Ensure main UI stays above it */
+header,
+main,
+#promptPanel,
+#payloadSidebar,
+#results {
+  position: relative;
+  z-index: 1;
+}
+
+/* Mobile tuning */
+@media (max-width: 768px) {
+  .app-bg-image {
+    width: 120px;
+    opacity: 0.08;
+  }
+}

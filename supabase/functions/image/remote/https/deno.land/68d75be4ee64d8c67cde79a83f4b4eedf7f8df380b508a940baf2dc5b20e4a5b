@@ -1,0 +1,97 @@
+// Copyright 2018-2023 the Deno authors. All rights reserved. MIT license.
+
+export const ERROR_WHILE_MAPPING_MESSAGE = "Threw while mapping.";
+
+/**
+ * pooledMap transforms values from an (async) iterable into another async
+ * iterable. The transforms are done concurrently, with a max concurrency
+ * defined by the poolLimit.
+ *
+ * If an error is thrown from `iterableFn`, no new transformations will begin.
+ * All currently executing transformations are allowed to finish and still
+ * yielded on success. After that, the rejections among them are gathered and
+ * thrown by the iterator in an `AggregateError`.
+ *
+ * @example
+ * ```typescript
+ * import { pooledMap } from "https://deno.land/std@$STD_VERSION/async/pool.ts";
+ *
+ * const results = pooledMap(
+ *   2,
+ *   [1, 2, 3],
+ *   (i) => new Promise((r) => setTimeout(() => r(i), 1000)),
+ * );
+ *
+ * for await (const value of results) {
+ *   // ...
+ * }
+ * ```
+ *
+ * @param poolLimit The maximum count of items being processed concurrently.
+ * @param array The input array for mapping.
+ * @param iteratorFn The function to call for every item of the array.
+ */
+export function pooledMap<T, R>(
+  poolLimit: number,
+  array: Iterable<T> | AsyncIterable<T>,
+  iteratorFn: (data: T) => Promise<R>,
+): AsyncIterableIterator<R> {
+  // Create the async iterable that is returned from this function.
+  const res = new TransformStream<Promise<R>, R>({
+    async transform(
+      p: Promise<R>,
+      controller: TransformStreamDefaultController<R>,
+    ) {
+      try {
+        const s = await p;
+        controller.enqueue(s);
+      } catch (e) {
+        if (
+          e instanceof AggregateError &&
+          e.message == ERROR_WHILE_MAPPING_MESSAGE
+        ) {
+          controller.error(e as unknown);
+        }
+      }
+    },
+  });
+  // Start processing items from the iterator
+  (async () => {
+    const writer = res.writable.getWriter();
+    const executing: Array<Promise<unknown>> = [];
+    try {
+      for await (const item of array) {
+        const p = Promise.resolve().then(() => iteratorFn(item));
+        // Only write on success. If we `writer.write()` a rejected promise,
+        // that will end the iteration. We don't want that yet. Instead let it
+        // fail the race, taking us to the catch block where all currently
+        // executing jobs are allowed to finish and all rejections among them
+        // can be reported together.
+        writer.write(p);
+        const e: Promise<unknown> = p.then(() =>
+          executing.splice(executing.indexOf(e), 1)
+        );
+        executing.push(e);
+        if (executing.length >= poolLimit) {
+          await Promise.race(executing);
+        }
+      }
+      // Wait until all ongoing events have processed, then close the writer.
+      await Promise.all(executing);
+      writer.close();
+    } catch {
+      const errors = [];
+      for (const result of await Promise.allSettled(executing)) {
+        if (result.status == "rejected") {
+          errors.push(result.reason);
+        }
+      }
+      writer.write(Promise.reject(
+        new AggregateError(errors, ERROR_WHILE_MAPPING_MESSAGE),
+      )).catch(() => {});
+    }
+  })();
+  return res.readable[Symbol.asyncIterator]();
+}
+
+// denoCacheMetadata={"headers":{"x-frame-options":"DENY","server":"AmazonS3,deployd","accept-ranges":"bytes","vary":"Accept-Encoding, Origin","content-security-policy":"default-src 'none'; style-src 'unsafe-inline'; sandbox","cross-origin-embedder-policy":"same-origin","x-cache":"Hit from cloudfront","server-timing":"fetchSource;dur=10","x-amz-cf-id":"UoQleJ2ZBy-cqCI-hje-Eo1SqDnlPYpmwq7MugRrgIz6GzWJ3eFxGw==","strict-transport-security":"max-age=63072000; includeSubDomains; preload","content-length":"3202","etag":"\"054b9681bb4efd6a0aca8e1fd92c5c64\"","referrer-policy":"strict-origin-when-cross-origin","x-amz-replication-status":"COMPLETED","access-control-allow-origin":"*","cache-control":"public, max-age=31536000, immutable","x-deno-trace-id":"9f4a1ee087558b28c915afb8a9332203","x-amz-server-side-encryption":"AES256","last-modified":"Mon, 06 Feb 2023 23:43:18 GMT","cross-origin-opener-policy":"same-origin","content-type":"application/typescript; charset=utf-8","cross-origin-resource-policy":"same-origin","alt-svc":"h3=\":443\"; ma=86400","via":"1.1 720129ba4056e60029189758c6f0de0c.cloudfront.net (CloudFront),HTTP/2 ord.vultr.prod.deno-cluster.net","x-amz-version-id":"qngTPCc64Pe48vE.Qm6ikbUVFZhu1ACG","date":"Mon, 05 Jan 2026 10:09:58 GMT","cache-status":"deno; hit","age":"926542","x-content-type-options":"nosniff","x-amz-cf-pop":"ORD56-P16"},"url":"https://deno.land/std@0.177.0/async/pool.ts","time":1768534339}

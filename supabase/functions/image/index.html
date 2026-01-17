@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seekura</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<img
+  src="assets/seekura.png"
+  alt=""
+  class="app-bg-image"
+/>
+
+
+<header>
+  <h1>Seekura</h1>
+  <button id="refTableBtn">Ref Table</button>
+</header>
+
+<div id="promptPanel">
+  <textarea id="prompt" placeholder="Enter your prompt here...... (Where are you Promptske?)" rows="4"></textarea>
+  <div class="prompt-row">
+    <button id="generateBtn">Generate</button>
+    <input type="number" id="numImages" value="1" min="1" max="10">
+    <span id="status"></span>
+  </div>
+</div>
+
+<div id="payloadSidebar">
+  <h3>LoRA Weights</h3>
+  <div id="payloadList"></div>
+  <button id="regeneratePayload">Regenerate With Current Weights</button>
+</div>
+
+<div id="results"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
